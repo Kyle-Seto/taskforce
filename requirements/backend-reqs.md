@@ -62,5 +62,6 @@ CREATE TABLE Tasks (
 ## Features Requirements:
 
  1. Clerk Authentication has already been implemented. After a sigin via clerk is successful, using the userID from clerk, check if the user exists in the Users table. If the user does not exist, insert the user into the Users table. Then proceed to use the user_id to functions like getting the user's teams, tasks, level, xp, and total damage dealt, etc.
- 2. Listen for any changes to any of the tables above and update the client side accordingly using Supabase real-time subscriptions.
- 3. Add the ability for users to complete tasks. When a user completes a task, update the task as completed in the database. After that, update the user's xp, level, and total damage dealt.
+ 2. The user fetches all the data of any teammates they have and their level, xp, total damage dealt, their tasks and the details of the tasks.
+ 3. Listen for any changes to any of the tables above and update the client side accordingly using Supabase real-time subscriptions.
+ 4. Add the ability for users to complete tasks. When a user completes a task, update the task as completed in the database. After that, update the user's xp, level, and total damage dealt.

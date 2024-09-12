@@ -1,21 +1,27 @@
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type TeamMember = {
+interface Task {
+  id: string;
+  description: string;
+  completed: boolean;
+}
+
+interface TeamMember {
   id: string;
   name: string;
   level: number;
   xp: number;
-};
+  totalDamageDealt: number;
+  tasks: Task[];
+}
 
-type TeamInfoProps = {
+interface TeamInfoProps {
   teamName: string;
   members: TeamMember[];
-};
+}
 
 export function TeamInfo({ teamName, members }: TeamInfoProps) {
-  const getXpForNextLevel = (level: number) => (level + 1) * 100; // Simple XP calculation, adjust as needed
-
   return (
     <Card>
       <CardHeader>
@@ -24,25 +30,33 @@ export function TeamInfo({ teamName, members }: TeamInfoProps) {
       <CardContent>
         <ul className="space-y-6">
           {members.map((member) => {
-            const xpForNextLevel = getXpForNextLevel(member.level);
-            const xpProgress = (member.xp / xpForNextLevel) * 100;
-            
+            const completedTasks = member.tasks.filter(task => task.completed).length;
+            const totalTasks = member.tasks.length;
+            const completionPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
             return (
-              <li key={member.id} className="space-y-2">
-                <div className="flex justify-between items-baseline">
-                  <p className="font-semibold">{member.name}</p>
-                  <p className="text-sm text-muted-foreground">Level {member.level}</p>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>XP: {member.xp}</span>
-                    <span>Next Level: {xpForNextLevel}</span>
-                  </div>
-                  <Progress value={xpProgress} className="w-full h-2" />
-                  <p className="text-xs text-right text-muted-foreground">
-                    {member.xp} / {xpForNextLevel} XP
-                  </p>
-                </div>
+              <li key={member.id}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex justify-between items-center">
+                      <span>{member.name}</span>
+                      <span className="text-sm text-gray-500">Level: {member.level}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="text-sm text-gray-500">
+                      <p>XP: {member.xp}</p>
+                      <p>Total Damage: {member.totalDamageDealt}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Tasks Progress</span>
+                        <span>{completedTasks}/{totalTasks}</span>
+                      </div>
+                      <Progress value={completionPercentage} className="w-full" />
+                    </div>
+                  </CardContent>
+                </Card>
               </li>
             );
           })}

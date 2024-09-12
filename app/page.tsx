@@ -6,24 +6,27 @@ import { BossInfo } from "@/components/BossInfo";
 import { DailyTasks } from "@/components/DailyTasks";
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
-import { checkAndInsertUser, getUserData, getUserTeams, getUserTasks } from '../lib/user'
+import { checkAndInsertUser, getUserData, getUserTeams, getTeamTasks } from '../lib/user'
 
 export default function Home() {
 	const { user } = useUser()
 	const [userData, setUserData] = useState(null)
 	const [userTeams, setUserTeams] = useState(null)
-	const [userTasks, setUserTasks] = useState(null)
+	const [teamTasks, setTeamTasks] = useState(null)
 
 	useEffect(() => {
 		async function initializeUser() {
 			if (user) {
-				await checkAndInsertUser(user.id, user.emailAddresses[0].emailAddress, user.firstName)
+				await checkAndInsertUser(user.id, user.emailAddresses[0].emailAddress, user.firstName ?? '')
 				const data = await getUserData(user.id)
 				const teams = await getUserTeams(user.id)
-				const tasks = await getUserTasks(user.id)
 				setUserData(data)
 				setUserTeams(teams)
-				setUserTasks(tasks)
+
+				if (teams && teams.length > 0) {
+					const tasks = await getTeamTasks(teams[0].teams.id)
+					setTeamTasks(tasks)
+				}
 			}
 		}
 
@@ -35,12 +38,12 @@ export default function Home() {
 		console.log(`Task ${taskId} completed`);
 	};
 
-	if (!user || !userData) {
+	if (!user || !userData || !userTeams || !teamTasks) {
 		return <div>Loading...</div>
 	}
 
 	// Assuming the first team is the current team
-	const currentTeam = userTeams && userTeams[0] ? userTeams[0].teams : null;
+	const currentTeam = userTeams[0].teams;
 
 	// Mock boss data (replace with actual data fetching later)
 	const bossData = {
@@ -49,18 +52,26 @@ export default function Home() {
 		maxHealth: 1000,
 	};
 
-	// Transform userTasks into the format expected by DailyTasks component
-	const formattedTasks = userTasks ? [
-		{
-			memberId: user.id,
-			memberName: userData.firstname,
-			tasks: userTasks.map(task => ({
-				id: task.id,
-				description: task.description,
-				completed: task.is_completed
-			}))
-		}
-	] : [];
+	// Transform teamTasks into the format expected by TeamInfo component
+	const teamMembers = currentTeam.team_members.map(member => ({
+		id: member.users.id,
+		name: member.users.firstname,
+		level: member.users.level,
+		xp: member.users.xp,
+		totalDamageDealt: member.users.total_damage_dealt,
+		tasks: teamTasks.filter(task => task.assigned_to === member.users.id).map(task => ({
+			id: task.id,
+			description: task.description,
+			completed: task.is_completed
+		}))
+	}));
+
+	// Transform teamTasks into the format expected by DailyTasks component
+	const formattedTasks = teamMembers.map(member => ({
+		memberId: member.id,
+		memberName: member.name,
+		tasks: member.tasks
+	}));
 
 	return (
 		<main className="min-h-screen flex flex-col">
@@ -79,20 +90,10 @@ export default function Home() {
 				/>
 				<div className="flex-grow grid gap-8 grid-cols-1 lg:grid-cols-3">
 					<div className="lg:col-span-1">
-						{currentTeam && (
-							<TeamInfo 
-								teamName={currentTeam.name} 
-								members={[
-									{ 
-										id: user.id, 
-										name: userData.firstname, 
-										level: userData.level, 
-										xp: userData.xp,
-									}
-									// Add other team members here when available
-								]} 
-							/>
-						)}
+						<TeamInfo 
+							teamName={currentTeam.name} 
+							members={teamMembers}
+						/>
 					</div>
 					<div className="lg:col-span-2 flex flex-col">
 						<DailyTasks
