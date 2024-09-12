@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { calculateTaskXpReward, getBossDamage, getXpToNextLevel } from './constants'
+import { calculateTaskXpReward, getBossDamage, getXpToNextLevel } from './gameLogic'
 
 export async function checkAndInsertUser(id: string, email: string, firstname: string) {
   const { data, error } = await supabase
@@ -163,7 +163,18 @@ export async function completeTask(userId: string, taskId: string) {
     return null;
   }
 
-  const xpReward = calculateTaskXpReward(userData.level);
+  const { data: taskData, error: taskError } = await supabase
+    .from('tasks')
+    .select('xp_difficulty_multiplier')
+    .eq('id', taskId)
+    .single();
+
+  if (taskError) {
+    console.error('Error fetching task data:', taskError);
+    return null;
+  }
+
+  const xpReward = calculateTaskXpReward(taskData.xp_difficulty_multiplier, userData.level);
   const bossDamage = getBossDamage(userData.level);
 
   let newXp = userData.xp + xpReward;
@@ -193,13 +204,13 @@ export async function completeTask(userId: string, taskId: string) {
   }
 
   // Update task completion status
-  const { error: taskError } = await supabase
+  const { error: taskUpdateError } = await supabase
     .from('tasks')
     .update({ is_completed: true })
     .eq('id', taskId);
 
-  if (taskError) {
-    console.error('Error updating task completion:', taskError);
+  if (taskUpdateError) {
+    console.error('Error updating task completion:', taskUpdateError);
   }
 
   // TODO: Update boss health in the database

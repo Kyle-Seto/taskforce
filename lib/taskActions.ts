@@ -13,7 +13,7 @@ export async function completeTask(task: Task, user: User) {
   if (userError) throw userError;
 
   const { xp, level, total_damage } = userData;
-  const xpReward = calculateTaskXpReward(level);
+  const xpReward = calculateTaskXpReward(task.xp_difficulty_multiplier, level);
   const damageDealt = getBossDamage(level);
 
   const newXp = xp + xpReward;

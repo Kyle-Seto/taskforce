@@ -1,5 +1,5 @@
 import { Progress } from "@/components/ui/progress";
-import { getXpToNextLevel } from '@/lib/constants';
+import { getXpToNextLevel } from '@/lib/gameLogic';
 
 interface TeamMember {
   id: string;
@@ -36,7 +36,6 @@ export function TeamInfo({ teamName, members }: TeamInfoProps) {
               <Progress 
                 value={(member.xp / getXpToNextLevel(member.level)) * 100} 
                 className="progress-bar" 
-                indicatorClassName="progress-bar-fill" 
               />
             </div>
             <p className="text-sm text-muted-foreground">{member.totalDamageDealt} Damage Dealt</p>

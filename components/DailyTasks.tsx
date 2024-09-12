@@ -1,14 +1,14 @@
 "use client";
 
-import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useState } from 'react';
-import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "./ui/dialog";
 import { useUser } from '@clerk/nextjs';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "./ui/dialog";
+import { Button } from "./ui/button";
 import { Task, MemberTasks, DailyTasksProps } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+import { TaskList } from './TaskList';
+import { TaskProgress } from './TaskProgress';
 
 export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTasksProps) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -25,7 +25,6 @@ export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTa
     }
 
     try {
-      console.log(selectedTask);
       const { data, error } = await supabase
         .from('tasks')
         .upsert({ 
@@ -38,9 +37,7 @@ export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTa
         .select()
         .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       console.log('Task updated:', data);
       onTaskComplete(selectedTask.id);
@@ -51,38 +48,11 @@ export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTa
     }
   };
 
-  const renderTaskList = (tasks: Task[], isCurrentUser: boolean) => (
-    <ul className="space-y-2">
-      {tasks
-        .sort((a, b) => a.id.localeCompare(b.id)) // Sort tasks by ID to maintain original order
-        .map((task) => (
-          <li key={task.id} className={`flex items-center p-2 rounded-md ${isCurrentUser ? 'hover:bg-accent' : ''}`}>
-            <Checkbox
-              id={task.id}
-              checked={task.is_completed}
-              onCheckedChange={() => {
-                if (isCurrentUser && !task.is_completed) {
-                  setSelectedTask(task);
-                  setIsModalOpen(true);
-                }
-              }}
-              disabled={!isCurrentUser || task.is_completed}
-              className={isCurrentUser ? '' : 'opacity-50 cursor-not-allowed'}
-            />
-            <label 
-              htmlFor={task.id} 
-              className={`ml-3 ${task.is_completed ? 'line-through text-muted-foreground' : ''} ${isCurrentUser ? '' : 'cursor-default'}`}
-            >
-              {task.description}
-            </label>
-          </li>
-        ))}
-    </ul>
-  );
-
-  const calculateProgress = (tasks: Task[]) => {
-    const completedTasks = tasks.filter(task => task.is_completed).length;
-    return (completedTasks / tasks.length) * 100;
+  const handleTaskClick = (task: Task) => {
+    if (!task.is_completed) {
+      setSelectedTask(task);
+      setIsModalOpen(true);
+    }
   };
 
   return (
@@ -93,14 +63,8 @@ export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTa
             <CardTitle className="text-2xl font-bold">Your Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            {renderTaskList(currentUserTasks.tasks, true)}
-            <div className="mt-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span>Progress</span>
-                <span>{currentUserTasks.tasks.filter(t => t.is_completed).length} / {currentUserTasks.tasks.length} completed</span>
-              </div>
-              <Progress value={calculateProgress(currentUserTasks.tasks)} className="progress-bar" />
-            </div>
+            <TaskList tasks={currentUserTasks.tasks} isCurrentUser={true} onTaskClick={handleTaskClick} />
+            <TaskProgress tasks={currentUserTasks.tasks} />
           </CardContent>
         </Card>
       )}
@@ -113,14 +77,8 @@ export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTa
           {otherMemberTasks.map((memberTasks) => (
             <div key={memberTasks.memberId} className="mb-6 last:mb-0">
               <h3 className="text-lg font-semibold mb-2">{memberTasks.memberName}'s Tasks</h3>
-              {renderTaskList(memberTasks.tasks, false)}
-              <div className="mt-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Progress</span>
-                  <span>{memberTasks.tasks.filter(t => t.is_completed).length} / {memberTasks.tasks.length} completed</span>
-                </div>
-                <Progress value={calculateProgress(memberTasks.tasks)} className="progress-bar" />
-              </div>
+              <TaskList tasks={memberTasks.tasks} isCurrentUser={false} onTaskClick={() => {}} />
+              <TaskProgress tasks={memberTasks.tasks} />
             </div>
           ))}
         </CardContent>

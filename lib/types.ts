@@ -2,6 +2,7 @@ export interface Task {
     id: string;
     description: string;
     is_completed: boolean;
+    assigned_to: string;
   }
   
   export interface MemberTasks {

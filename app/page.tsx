@@ -6,8 +6,8 @@ import { DailyTasks } from "@/components/DailyTasks";
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState, useCallback } from 'react'
 import { checkAndInsertUser, getUserData, getUserTeams, getTeamTasks, getBossData } from '../lib/user'
-import { getXpToNextLevel, calculateTaskXpReward, getBossDamage } from '../lib/constants';
-import { supabase, createChannel } from '@/lib/supabase';
+import { getXpToNextLevel, calculateTaskXpReward, getBossDamage } from '../lib/gameLogic';
+import { createChannel } from '@/lib/supabase';
 import { User, Team, Boss, Task } from '@/lib/types';
 
 export default function Home() {
@@ -74,10 +74,11 @@ export default function Home() {
 	const handleTaskComplete = async (taskId: string) => {
 		if (!userData) return;
 
-		const xpReward = calculateTaskXpReward(userData.level);
-		const bossDamage = getBossDamage(userData.level);
+		const task = teamTasks?.find(t => t.id === taskId);
+		if (!task) return;
 
-		// TODO: Implement API call to update task completion, user XP, and boss health
+		const xpReward = calculateTaskXpReward(task.xp_difficulty_multiplier, userData.level);
+		const bossDamage = getBossDamage(userData.level);
 		console.log(`Task ${taskId} completed. XP Reward: ${xpReward}, Boss Damage: ${bossDamage}`);
 	};
 
