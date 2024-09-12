@@ -4,9 +4,10 @@ import { TeamInfo } from "@/components/TeamInfo";
 import { BossInfo } from "@/components/BossInfo";
 import { DailyTasks } from "@/components/DailyTasks";
 import { useUser } from '@clerk/nextjs'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { checkAndInsertUser, getUserData, getUserTeams, getTeamTasks, getBossData } from '../lib/user'
 import { getXpToNextLevel, calculateTaskXpReward, getBossDamage } from '../lib/constants';
+import { supabase, createChannel } from '@/lib/supabase';
 
 export default function Home() {
 	const { user } = useUser()
@@ -15,28 +16,59 @@ export default function Home() {
 	const [teamTasks, setTeamTasks] = useState(null)
 	const [bossData, setBossData] = useState(null)
 
-	useEffect(() => {
-		async function initializeUser() {
-			if (user) {
-				await checkAndInsertUser(user.id, user.emailAddresses[0].emailAddress, user.firstName ?? '')
-				const data = await getUserData(user.id)
-				const teams = await getUserTeams(user.id)
-				setUserData(data)
-				setUserTeams(teams)
+	const initializeUser = useCallback(async () => {
+		if (user) {
+			await checkAndInsertUser(user.id, user.emailAddresses[0].emailAddress, user.firstName ?? '')
+			const data = await getUserData(user.id)
+			const teams = await getUserTeams(user.id)
+			setUserData(data)
+			setUserTeams(teams)
 
-				if (teams && teams.length > 0) {
-					const tasks = await getTeamTasks(teams[0].teams.id)
-					setTeamTasks(tasks)
-					
-					// Fetch boss data using the team ID
-					const boss = await getBossData(teams[0].teams.id)
-					setBossData(boss)
-				}
+			if (teams && teams.length > 0) {
+				const tasks = await getTeamTasks(teams[0].teams.id)
+				setTeamTasks(tasks)
+				
+				const boss = await getBossData(teams[0].teams.id)
+				setBossData(boss)
 			}
 		}
+	}, [user]);
 
-		initializeUser()
-	}, [user])
+	useEffect(() => {
+		initializeUser();
+
+		const channel = createChannel()
+		const subscription = channel
+			.on(
+				'postgres_changes',
+				{ event: '*', schema: 'public', table: 'tasks' },
+				(payload) => {
+					console.log('Tasks changed:', payload);
+					initializeUser()
+				}
+			)
+			.on(
+				'postgres_changes',
+				{ event: '*', schema: 'public', table: 'users' },
+				(payload) => {
+					console.log('Users changed:', payload);
+					initializeUser()
+				}
+			)
+			.on(
+				'postgres_changes',
+				{ event: '*', schema: 'public', table: 'bosses' },
+				(payload) => {
+					console.log('Boss changed:', payload);
+					initializeUser()
+				}
+			)
+			.subscribe()
+
+		return () => {
+			subscription.unsubscribe();
+		};
+	}, [user, userTeams, initializeUser]);
 
 	const handleTaskComplete = async (taskId: string) => {
 		if (!userData) return;
@@ -49,11 +81,6 @@ export default function Home() {
 	};
 
 	if (!user || !userData || !userTeams || !teamTasks || !bossData) {
-    console.log(user)
-    console.log(userData)
-    console.log(userTeams)
-    console.log(teamTasks)
-    console.log(bossData)
 		return (
 			<div className="flex items-center justify-center h-screen w-full bg-background">
 				<div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
@@ -75,7 +102,7 @@ export default function Home() {
 		tasks: teamTasks.filter(task => task.assigned_to === member.users.id).map(task => ({
 			id: task.id,
 			description: task.description,
-			completed: task.is_completed
+			is_completed: task.is_completed
 		}))
 	}));
 
