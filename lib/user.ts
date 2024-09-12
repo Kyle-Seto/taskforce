@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { calculateTaskXpReward, getBossDamage, getXpToNextLevel } from './constants'
 
 export async function checkAndInsertUser(id: string, email: string, firstname: string) {
   const { data, error } = await supabase
@@ -148,4 +149,92 @@ export async function getTeamTasks(teamId: string) {
   }
 
   return data
+}
+
+export async function completeTask(userId: string, taskId: string) {
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (userError) {
+    console.error('Error fetching user data:', userError);
+    return null;
+  }
+
+  const xpReward = calculateTaskXpReward(userData.level);
+  const bossDamage = getBossDamage(userData.level);
+
+  let newXp = userData.xp + xpReward;
+  let newLevel = userData.level;
+  let xpToNextLevel = getXpToNextLevel(newLevel);
+
+  while (newXp >= xpToNextLevel) {
+    newLevel++;
+    newXp -= xpToNextLevel;
+    xpToNextLevel = getXpToNextLevel(newLevel);
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .update({
+      xp: newXp,
+      level: newLevel,
+      total_damage_dealt: userData.total_damage_dealt + bossDamage
+    })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating user data:', error);
+    return null;
+  }
+
+  // Update task completion status
+  const { error: taskError } = await supabase
+    .from('tasks')
+    .update({ is_completed: true })
+    .eq('id', taskId);
+
+  if (taskError) {
+    console.error('Error updating task completion:', taskError);
+  }
+
+  // TODO: Update boss health in the database
+
+  return data;
+}
+
+export async function getBossData(teamId: string) {
+  // First, get the current boss ID for the team
+  const { data: teamData, error: teamError } = await supabase
+    .from('teams')
+    .select('current_boss_id')
+    .eq('id', teamId)
+    .single()
+  if (teamError) {
+    console.error('Error fetching team data:', teamError)
+    return null
+  }
+
+  if (!teamData || !teamData.current_boss_id) {
+    console.error('No current boss found for the team')
+    return null
+  }
+
+  // Now fetch the boss data using the current_boss_id
+  const { data: bossData, error: bossError } = await supabase
+    .from('bosses')
+    .select('*')
+    .eq('id', teamData.current_boss_id)
+    .single()
+
+  if (bossError) {
+    console.error('Error fetching boss data:', bossError)
+    return null
+  }
+
+  return bossData
 }

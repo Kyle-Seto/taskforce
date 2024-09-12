@@ -1,94 +1,98 @@
 "use client";
 
-import { useState } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserCircle } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-type Task = {
+interface Task {
   id: string;
   description: string;
   completed: boolean;
-};
+}
 
-type TeamMemberTasks = {
+interface MemberTasks {
   memberId: string;
   memberName: string;
   tasks: Task[];
-};
+}
 
-type DailyTasksProps = {
+interface DailyTasksProps {
   currentUserId: string;
-  teamTasks: TeamMemberTasks[];
+  teamTasks: MemberTasks[];
   onTaskComplete: (taskId: string) => void;
-};
+}
 
 export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTasksProps) {
-  const [tasks, setTasks] = useState(teamTasks);
+  const currentUserTasks = teamTasks.find(member => member.memberId === currentUserId);
+  const otherMemberTasks = teamTasks.filter(member => member.memberId !== currentUserId);
 
-  const handleTaskToggle = (memberId: string, taskId: string) => {
-    if (memberId === currentUserId) {
-      setTasks(prevTasks =>
-        prevTasks.map(member =>
-          member.memberId === memberId
-            ? {
-                ...member,
-                tasks: member.tasks.map(task =>
-                  task.id === taskId ? { ...task, completed: !task.completed } : task
-                ),
-              }
-            : member
-        )
-      );
-      onTaskComplete(taskId);
-    }
-  };
+  const renderTaskList = (tasks: Task[], isCurrentUser: boolean) => (
+    <ul className="space-y-2">
+      {tasks.map((task) => (
+        <li key={task.id} className={`flex items-center p-2 rounded-md ${isCurrentUser ? 'hover:bg-accent' : ''}`}>
+          <Checkbox
+            id={task.id}
+            checked={task.completed}
+            onCheckedChange={() => isCurrentUser && onTaskComplete(task.id)}
+            disabled={!isCurrentUser || task.completed}
+            className={isCurrentUser ? '' : 'opacity-50 cursor-not-allowed'}
+          />
+          <label 
+            htmlFor={task.id} 
+            className={`ml-3 ${task.completed ? 'line-through text-muted-foreground' : ''} ${isCurrentUser ? '' : 'cursor-default'}`}
+          >
+            {task.description}
+          </label>
+        </li>
+      ))}
+    </ul>
+  );
 
-  const calculateProgress = (memberTasks: Task[]) => {
-    const completedTasks = memberTasks.filter(task => task.completed).length;
-    return (completedTasks / memberTasks.length) * 100;
+  const calculateProgress = (tasks: Task[]) => {
+    const completedTasks = tasks.filter(task => task.completed).length;
+    return (completedTasks / tasks.length) * 100;
   };
 
   return (
     <div className="space-y-6">
-      {tasks.map(member => (
-        <Card key={member.memberId} className={member.memberId === currentUserId ? "border-primary" : ""}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-medium">
-              {member.memberId === currentUserId ? (
-                <div className="flex items-center space-x-2">
-                  <UserCircle className="h-5 w-5" />
-                  <span>Your Tasks</span>
-                </div>
-              ) : (
-                `${member.memberName}'s Tasks`
-              )}
-            </CardTitle>
-            <Progress value={calculateProgress(member.tasks)} className="w-1/3" />
+      {currentUserTasks && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">Your Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2">
-              {member.tasks.map(task => (
-                <li key={task.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={task.id}
-                    checked={task.completed}
-                    onCheckedChange={() => handleTaskToggle(member.memberId, task.id)}
-                    disabled={member.memberId !== currentUserId}
-                  />
-                  <label
-                    htmlFor={task.id}
-                    className={`${task.completed ? 'line-through text-muted-foreground' : ''} ${member.memberId === currentUserId ? 'font-medium' : ''}`}
-                  >
-                    {task.description}
-                  </label>
-                </li>
-              ))}
-            </ul>
+            {renderTaskList(currentUserTasks.tasks, true)}
+            <div className="mt-4">
+              <div className="flex justify-between text-sm mb-1">
+                <span>Progress</span>
+                <span>{currentUserTasks.tasks.filter(t => t.completed).length} / {currentUserTasks.tasks.length} completed</span>
+              </div>
+              <Progress value={calculateProgress(currentUserTasks.tasks)} className="progress-bar" />
+            </div>
           </CardContent>
         </Card>
-      ))}
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Teammates' Tasks</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {otherMemberTasks.map((memberTasks) => (
+            <div key={memberTasks.memberId} className="mb-6 last:mb-0">
+              <h3 className="text-lg font-semibold mb-2">{memberTasks.memberName}'s Tasks</h3>
+              {renderTaskList(memberTasks.tasks, false)}
+              <div className="mt-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Progress</span>
+                  <span>{memberTasks.tasks.filter(t => t.completed).length} / {memberTasks.tasks.length} completed</span>
+                </div>
+                <Progress value={calculateProgress(memberTasks.tasks)} className="progress-bar" />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }

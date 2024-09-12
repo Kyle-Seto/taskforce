@@ -1,11 +1,5 @@
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface Task {
-  id: string;
-  description: string;
-  completed: boolean;
-}
+import { getXpToNextLevel } from '@/lib/constants';
 
 interface TeamMember {
   id: string;
@@ -13,7 +7,7 @@ interface TeamMember {
   level: number;
   xp: number;
   totalDamageDealt: number;
-  tasks: Task[];
+  xpToNextLevel: number;
 }
 
 interface TeamInfoProps {
@@ -23,45 +17,32 @@ interface TeamInfoProps {
 
 export function TeamInfo({ teamName, members }: TeamInfoProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{teamName}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-6">
-          {members.map((member) => {
-            const completedTasks = member.tasks.filter(task => task.completed).length;
-            const totalTasks = member.tasks.length;
-            const completionPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-
-            return (
-              <li key={member.id}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex justify-between items-center">
-                      <span>{member.name}</span>
-                      <span className="text-sm text-gray-500">Level: {member.level}</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-sm text-gray-500">
-                      <p>XP: {member.xp}</p>
-                      <p>Total Damage: {member.totalDamageDealt}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Tasks Progress</span>
-                        <span>{completedTasks}/{totalTasks}</span>
-                      </div>
-                      <Progress value={completionPercentage} className="w-full" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </li>
-            );
-          })}
-        </ul>
-      </CardContent>
-    </Card>
+    <div className="card">
+      <div className="card-header">
+        <h2 className="text-2xl font-bold">{teamName}</h2>
+      </div>
+      <ul className="divide-y divide-border">
+        {members.map((member) => (
+          <li key={member.id} className="card-content">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-semibold">{member.name}</h3>
+              <span className="text-sm font-medium">Level {member.level}</span>
+            </div>
+            <div className="mb-2">
+              <div className="flex justify-between text-sm mb-1">
+                <span>XP: {member.xp}</span>
+                <span>{getXpToNextLevel(member.level) - member.xp} to next level</span>
+              </div>
+              <Progress 
+                value={(member.xp / getXpToNextLevel(member.level)) * 100} 
+                className="progress-bar" 
+                indicatorClassName="progress-bar-fill" 
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">{member.totalDamageDealt} Damage Dealt</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

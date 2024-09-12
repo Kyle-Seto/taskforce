@@ -17,11 +17,13 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className={inter.className}>
-        <Header />
-          {children}
-          </body>
+      <html lang="en" className="h-full">
+        <body className={`${inter.className} flex flex-col min-h-screen bg-background text-foreground`}>
+          <Header />
+          <main className="flex-grow">
+            {children}
+          </main>
+        </body>
       </html>
     </ClerkProvider>
   );
