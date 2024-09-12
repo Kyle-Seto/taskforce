@@ -53,28 +53,30 @@ export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTa
 
   const renderTaskList = (tasks: Task[], isCurrentUser: boolean) => (
     <ul className="space-y-2">
-      {tasks.map((task) => (
-        <li key={task.id} className={`flex items-center p-2 rounded-md ${isCurrentUser ? 'hover:bg-accent' : ''}`}>
-          <Checkbox
-            id={task.id}
-            checked={task.is_completed}
-            onCheckedChange={() => {
-              if (isCurrentUser && !task.is_completed) {
-                setSelectedTask(task);
-                setIsModalOpen(true);
-              }
-            }}
-            disabled={!isCurrentUser || task.is_completed}
-            className={isCurrentUser ? '' : 'opacity-50 cursor-not-allowed'}
-          />
-          <label 
-            htmlFor={task.id} 
-            className={`ml-3 ${task.is_completed ? 'line-through text-muted-foreground' : ''} ${isCurrentUser ? '' : 'cursor-default'}`}
-          >
-            {task.description}
-          </label>
-        </li>
-      ))}
+      {tasks
+        .sort((a, b) => a.id.localeCompare(b.id)) // Sort tasks by ID to maintain original order
+        .map((task) => (
+          <li key={task.id} className={`flex items-center p-2 rounded-md ${isCurrentUser ? 'hover:bg-accent' : ''}`}>
+            <Checkbox
+              id={task.id}
+              checked={task.is_completed}
+              onCheckedChange={() => {
+                if (isCurrentUser && !task.is_completed) {
+                  setSelectedTask(task);
+                  setIsModalOpen(true);
+                }
+              }}
+              disabled={!isCurrentUser || task.is_completed}
+              className={isCurrentUser ? '' : 'opacity-50 cursor-not-allowed'}
+            />
+            <label 
+              htmlFor={task.id} 
+              className={`ml-3 ${task.is_completed ? 'line-through text-muted-foreground' : ''} ${isCurrentUser ? '' : 'cursor-default'}`}
+            >
+              {task.description}
+            </label>
+          </li>
+        ))}
     </ul>
   );
 

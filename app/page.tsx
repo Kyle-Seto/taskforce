@@ -8,13 +8,14 @@ import { useEffect, useState, useCallback } from 'react'
 import { checkAndInsertUser, getUserData, getUserTeams, getTeamTasks, getBossData } from '../lib/user'
 import { getXpToNextLevel, calculateTaskXpReward, getBossDamage } from '../lib/constants';
 import { supabase, createChannel } from '@/lib/supabase';
+import { User, Team, Boss, Task } from '@/lib/types';
 
 export default function Home() {
 	const { user } = useUser()
-	const [userData, setUserData] = useState(null)
-	const [userTeams, setUserTeams] = useState(null)
-	const [teamTasks, setTeamTasks] = useState(null)
-	const [bossData, setBossData] = useState(null)
+	const [userData, setUserData] = useState<User | null>(null)
+	const [userTeams, setUserTeams] = useState<{ teams: Team }[] | null>(null)
+	const [teamTasks, setTeamTasks] = useState<Task[] | null>(null)
+	const [bossData, setBossData] = useState<Boss | null>(null)
 
 	const initializeUser = useCallback(async () => {
 		if (user) {
