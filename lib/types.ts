@@ -3,6 +3,7 @@ export interface Task {
     description: string;
     is_completed: boolean;
     assigned_to: string;
+    xp_difficulty_multiplier: number;
   }
   
   export interface MemberTasks {
@@ -19,7 +20,7 @@ export interface Task {
   
   export interface User {
     id: string;
-    emailAddress: string;
+    email: string;
     firstname: string;
     level: number;
     xp: number;
@@ -37,9 +38,11 @@ export interface Task {
   }
   
   export interface Boss {
+    id: string;
     name: string;
-    subtitle: string;
-    current_hp: number;
-    max_hp: number;
     image_url: string;
+    max_hp: number;
+    current_hp: number;
+    xp_reward: number;
+    subtitle: string;
   }

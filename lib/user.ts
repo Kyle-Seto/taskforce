@@ -97,7 +97,6 @@ export async function getUserTeams(userId: string) {
   const { data, error } = await supabase
     .from('team_members')
     .select(`
-      team_id,
       teams (
         id,
         name,
@@ -120,7 +119,7 @@ export async function getUserTeams(userId: string) {
     return null
   }
 
-  return data
+  return data.map(item => item.teams)
 }
 
 export async function getUserTasks(userId: string) {

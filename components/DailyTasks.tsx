@@ -25,21 +25,21 @@ export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTa
     }
 
     try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .upsert({ 
-          id: selectedTask.id, 
-          assigned_to: user.id, 
-          is_completed: true, 
-          description: selectedTask.description,
-          date: new Date().toISOString().split('T')[0]
-        })
-        .select()
-        .single();
+      // const { data, error } = await supabase
+      //   .from('tasks')
+      //   .upsert({ 
+      //     id: selectedTask.id, 
+      //     assigned_to: user.id, 
+      //     is_completed: true, 
+      //     description: selectedTask.description,
+      //     date: new Date().toISOString().split('T')[0]
+      //   })
+      //   .select()
+      //   .single();
 
-      if (error) throw error;
+      // if (error) throw error;
 
-      console.log('Task updated:', data);
+      // console.log('Task updated:', data);
       onTaskComplete(selectedTask.id);
       setIsModalOpen(false);
       setSelectedTask(null);

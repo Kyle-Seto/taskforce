@@ -20,3 +20,15 @@ export function calculateTaskXpReward(xpDifficultyMultiplier: number, level: num
   const levelMultiplier = getXpRewardMultiplier(level);
   return Math.floor(baseXp * xpDifficultyMultiplier * levelMultiplier);
 }
+
+export function calculateLevelUp(currentXp: number, currentLevel: number): { xp: number, level: number } {
+  let xp = currentXp;
+  let level = currentLevel;
+
+  while (xp >= getXpToNextLevel(level)) {
+    xp -= getXpToNextLevel(level);
+    level++;
+  }
+
+  return { xp, level };
+}

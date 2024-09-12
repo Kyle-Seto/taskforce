@@ -6,9 +6,10 @@ import { DailyTasks } from "@/components/DailyTasks";
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState, useCallback } from 'react'
 import { checkAndInsertUser, getUserData, getUserTeams, getTeamTasks, getBossData } from '../lib/user'
-import { getXpToNextLevel, calculateTaskXpReward, getBossDamage } from '../lib/gameLogic';
+import { getXpToNextLevel } from '../lib/gameLogic';
 import { createChannel } from '@/lib/supabase';
 import { User, Team, Boss, Task } from '@/lib/types';
+import { completeTask } from '@/lib/taskActions'; // Import the completeTask function
 
 export default function Home() {
 	const { user } = useUser()
@@ -26,10 +27,10 @@ export default function Home() {
 			setUserTeams(teams)
 
 			if (teams && teams.length > 0) {
-				const tasks = await getTeamTasks(teams[0].teams.id)
+				const tasks = await getTeamTasks(teams[0].id)
 				setTeamTasks(tasks)
 				
-				const boss = await getBossData(teams[0].teams.id)
+				const boss = await getBossData(teams[0].id)
 				setBossData(boss)
 			}
 		}
@@ -72,14 +73,22 @@ export default function Home() {
 	}, [user, userTeams, initializeUser]);
 
 	const handleTaskComplete = async (taskId: string) => {
-		if (!userData) return;
+		if (!userData || !user) return;
 
 		const task = teamTasks?.find(t => t.id === taskId);
 		if (!task) return;
 
-		const xpReward = calculateTaskXpReward(task.xp_difficulty_multiplier, userData.level);
-		const bossDamage = getBossDamage(userData.level);
-		console.log(`Task ${taskId} completed. XP Reward: ${xpReward}, Boss Damage: ${bossDamage}`);
+		try {
+			console.log('task', task);
+			console.log('userData', userData);
+			console.log('bossData', bossData);
+			console.log('userTeams', userTeams);
+			await completeTask(task, userData, bossData, userTeams[0]);
+			console.log(`Task ${taskId} completed successfully.`);
+			initializeUser();
+		} catch (error) {
+			console.error('Error completing task poopoo:', error);
+		}
 	};
 
 	if (!user || !userData || !userTeams || !teamTasks || !bossData) {
@@ -91,7 +100,7 @@ export default function Home() {
 	}
 
 	// Assuming the first team is the current team
-	const currentTeam = userTeams[0].teams;
+	const currentTeam = userTeams[0];
 
 	// Transform teamTasks into the format expected by TeamInfo component
 	const teamMembers = currentTeam.team_members.map(member => ({

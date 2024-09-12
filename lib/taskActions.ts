@@ -1,84 +1,102 @@
 import { supabase } from '@/lib/supabase';
-import { Task } from '@/lib/types';
-import { User } from '@clerk/nextjs/server';
-import { getBossDamage, calculateTaskXpReward, getXpToNextLevel } from '@/lib/gameLogic';
+import { Task, User, Boss, Team } from '@/lib/types';
+import { getBossDamage, calculateTaskXpReward, calculateLevelUp } from '@/lib/gameLogic';
 
-export async function completeTask(task: Task, user: User) {
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+export async function completeTask(task: Task, user: User, boss: Boss, team: Team) {
 
-  if (userError) throw userError;
+  const xpReward = calculateTaskXpReward(task.xp_difficulty_multiplier, user.level);
+  const damageDealt = getBossDamage(user.level);
 
-  const { xp, level, total_damage } = userData;
-  const xpReward = calculateTaskXpReward(task.xp_difficulty_multiplier, level);
-  const damageDealt = getBossDamage(level);
+  const updatedXp = user.xp + xpReward;
+  const newTotalDamage = user.total_damage_dealt + damageDealt;
 
-  const newXp = xp + xpReward;
-  const newTotalDamage = total_damage + damageDealt;
-
-  let newLevel = level;
-  let remainingXp = newXp;
-
-  while (remainingXp >= getXpToNextLevel(newLevel)) {
-    remainingXp -= getXpToNextLevel(newLevel);
-    newLevel++;
-  }
+  const { xp: newXp, level: newLevel } = calculateLevelUp(updatedXp, user.level);
 
   // Update task
-  await supabase
+  const { data: updatedTask, error: taskError } = await supabase
     .from('tasks')
-    .update({ is_completed: true })
-    .eq('id', task.id);
+    .upsert({ 
+      id: task.id,
+      assigned_to: user.id,
+      is_completed: true,
+      description: task.description,
+      date: new Date().toISOString().split('T')[0]
+    })
+    .select();
+
+  if (taskError) throw taskError;
 
   // Update user stats
-  await supabase
+  const { data: updatedUser, error: userUpdateError } = await supabase
     .from('users')
-    .update({ xp: remainingXp, level: newLevel, total_damage: newTotalDamage })
-    .eq('id', user.id);
+    .upsert({ 
+      id: user.id,
+      xp: newXp, 
+      level: newLevel, 
+      total_damage_dealt: newTotalDamage 
+    })
+    .select();
 
-  // Update boss HP
-  const { data: bossData, error: bossError } = await supabase
-    .from('bosses')
-    .select('*')
-    .eq('id', userData.team_id)
-    .single();
+  if (userUpdateError) throw userUpdateError;
 
-  if (bossError) throw bossError;
-
-  let { current_hp, max_hp } = bossData;
-  current_hp -= damageDealt;
-
-  if (current_hp <= 0) {
-    await handleBossDefeat(userData.team_id, max_hp);
+  const updated_current_hp = boss.current_hp - damageDealt;
+    console.log('updated_current_hp', updated_current_hp);
+  if (updated_current_hp <= 0) {
+    console.log('Boss defeated');
+    console.log('team', team);
+    await handleBossDefeat(team, boss);
   } else {
-    await supabase
+    const { data: updatedBoss, error: updateBossError } = await supabase
       .from('bosses')
-      .update({ current_hp })
-      .eq('id', bossData.id);
+      .upsert({ 
+        id: boss.id,
+        current_hp: updated_current_hp,
+        max_hp: boss.max_hp,
+        name: boss.name,
+        subtitle: boss.subtitle,
+        image_url: boss.image_url
+      })
+      .select();
+
+    if (updateBossError) throw updateBossError;
   }
+
+  return;
 }
 
-async function handleBossDefeat(teamId: string, maxHp: number) {
+async function handleBossDefeat(team: Team, boss: Boss) {
   const teamXpReward = 1000; // Adjust as needed
 
   // Reset boss HP
-  await supabase
+  const { data: updatedBoss, error: resetBossError } = await supabase
     .from('bosses')
-    .update({ current_hp: maxHp })
-    .eq('id', teamId);
+    .upsert({ 
+      id: boss.id,
+      current_hp: boss.max_hp,
+      max_hp: boss.max_hp,
+      name: boss.name,
+      subtitle: boss.subtitle,
+      image_url: boss.image_url
+    })
+    .select();
 
-  // Reward team XP
-  const { data: teamData, error: teamError } = await supabase
-    .from('team_members')
-    .select('user_id')
-    .eq('team_id', teamId);
+  if (resetBossError) throw resetBossError;
+  const updatedUsers = team.team_members.map((member) => {
+    const { xp, level } = calculateLevelUp(member.users.xp + teamXpReward, member.users.level);
+    return { 
+      id: member.users.id, 
+      xp, 
+      level, 
+      email: member.users.email, 
+      firstname: member.users.firstname,
+      total_damage_dealt: member.users.total_damage_dealt
+    };
+  });
 
-  if (teamError) throw teamError;
+  const { data: updatedTeamUsers, error: upsertError } = await supabase
+    .from('users')
+    .upsert(updatedUsers)
+    .select();
 
-  for (const { user_id } of teamData) {
-    await supabase.rpc('add_user_xp', { user_id, xp_amount: teamXpReward });
-  }
+  if (upsertError) throw upsertError;
 }
