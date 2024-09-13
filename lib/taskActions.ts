@@ -40,10 +40,7 @@ export async function completeTask(task: Task, user: User, boss: Boss, team: Tea
   if (userUpdateError) throw userUpdateError;
 
   const updated_current_hp = boss.current_hp - damageDealt;
-    console.log('updated_current_hp', updated_current_hp);
   if (updated_current_hp <= 0) {
-    console.log('Boss defeated');
-    console.log('team', team);
     await handleBossDefeat(team, boss);
   } else {
     const { data: updatedBoss, error: updateBossError } = await supabase
@@ -64,7 +61,7 @@ export async function completeTask(task: Task, user: User, boss: Boss, team: Tea
   return;
 }
 
-async function handleBossDefeat(team: Team, boss: Boss) {
+async function handleBossDefeat(team: any, boss: Boss) {
   const teamXpReward = 1000; // Adjust as needed
 
   // Reset boss HP
@@ -81,7 +78,7 @@ async function handleBossDefeat(team: Team, boss: Boss) {
     .select();
 
   if (resetBossError) throw resetBossError;
-  const updatedUsers = team.team_members.map((member) => {
+  const updatedUsers = team.team_members.map((member: any) => {
     const { xp, level } = calculateLevelUp(member.users.xp + teamXpReward, member.users.level);
     return { 
       id: member.users.id, 

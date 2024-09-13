@@ -12,7 +12,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 export default function Home() {
 	const { user } = useUser()
 	const [userData, setUserData] = useState<User | null>(null)
-	const [userTeams, setUserTeams] = useState<Team[] | null>(null)
+	const [userTeams, setUserTeams] = useState<Team[]>([])
 	const [teamTasks, setTeamTasks] = useState<Task[] | null>(null)
 	const [bossData, setBossData] = useState<Boss | null>(null)
 
@@ -22,11 +22,11 @@ export default function Home() {
 			const data = await getUserData(user.id)
 			const teams = await getUserTeams(user.id)
 			setUserData(data)
-			setUserTeams(teams)
+			setUserTeams(teams as unknown as Team[])
 
 			if (teams && teams.length > 0) {
 				const tasks = await getTeamTasks(teams[0].id)
-				setTeamTasks(tasks)
+				setTeamTasks(tasks as Task[])
 				
 				const boss = await getBossData(teams[0].id)
 				setBossData(boss)
@@ -77,7 +77,8 @@ export default function Home() {
 		if (!task) return;
 
 		try {
-			await completeTask(task, userData, bossData, userTeams[0]);
+			await completeTask(task, userData, bossData as Boss, userTeams[0] as Team);
+
 			console.log(`Task ${taskId} completed successfully.`);
 			initializeUser();
 		} catch (error) {

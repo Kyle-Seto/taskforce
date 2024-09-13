@@ -32,16 +32,11 @@ export function MainContent({ userData, userTeams, teamTasks, bossData, onTaskCo
 			}))
 		: [];
 
-	console.log("teamMembers", teamMembers)
-	console.log("currentTeam", currentTeam)
-
 	const formattedTasks = teamMembers.map(member => ({
 		memberId: member.id,
 		memberName: member.name,
 		tasks: member.tasks
 	}));
-
-	console.log("formattedTasks", formattedTasks)
 
 	return (
 		<div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">

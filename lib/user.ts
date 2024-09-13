@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { calculateTaskXpReward, getBossDamage, getXpToNextLevel } from './gameLogic'
+import { Team } from './types'
 
 export async function checkAndInsertUser(id: string, email: string, firstname: string) {
   const { data, error } = await supabase
@@ -119,7 +120,7 @@ export async function getUserTeams(userId: string) {
     return null
   }
 
-  return data.map(item => item.teams)
+  return data.map(item => item.teams) as unknown as Team[]
 }
 
 export async function getUserTasks(userId: string) {

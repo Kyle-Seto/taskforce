@@ -11,7 +11,6 @@ import { TaskList } from './TaskList';
 import { TaskProgress } from './TaskProgress';
 
 export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTasksProps) {
-	console.log("teamTasks", teamTasks)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user } = useUser();
