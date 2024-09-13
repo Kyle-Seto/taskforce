@@ -38,9 +38,9 @@ export async function checkAndInsertUser(id: string, email: string, firstname: s
     // Early development stage: Automatically add default tasks for the user
     // TODO: Remove this in production and implement proper task assignment logic
     const defaultTasks = [
-      { description: 'Complete onboarding', xp_reward: 100 },
-      { description: 'Set up profile', xp_reward: 50 },
-      { description: 'Join team chat', xp_reward: 50 },
+      { description: 'Complete onboarding', xp_difficulty_multiplier: 2 },
+      { description: 'Set up profile', xp_difficulty_multiplier: 1 },
+      { description: 'Join team chat', xp_difficulty_multiplier: 1 },
     ];
 
     for (const task of defaultTasks) {
@@ -50,7 +50,7 @@ export async function checkAndInsertUser(id: string, email: string, firstname: s
           team_id: defaultTeamId,
           assigned_to: id,
           description: task.description,
-          xp_reward: task.xp_reward,
+          xp_difficulty_multiplier: task.xp_difficulty_multiplier,
           date: new Date().toISOString().split('T')[0], // Current date
         });
 
