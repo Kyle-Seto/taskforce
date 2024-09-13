@@ -41,6 +41,9 @@ export async function checkAndInsertUser(id: string, email: string, firstname: s
       { description: 'Complete onboarding', xp_difficulty_multiplier: 2 },
       { description: 'Set up profile', xp_difficulty_multiplier: 1 },
       { description: 'Join team chat', xp_difficulty_multiplier: 1 },
+      { description: 'Brush your teeth', xp_difficulty_multiplier: 1 },
+      { description: 'Make your bed', xp_difficulty_multiplier: 1 },
+      { description: 'Solve 3 Leetcode problems', xp_difficulty_multiplier: 1.5},
     ];
 
     for (const task of defaultTasks) {

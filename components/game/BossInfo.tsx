@@ -14,7 +14,7 @@ export function BossInfo({ name, subtitle, currentHp, maxHp, imageUrl }: BossInf
 
   return (
     <div className="card overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800 border border-red-800 shadow-lg">
-      <div className="relative h-80 sm:h-96 md:h-[28rem]">
+      <div className="relative h-96 sm:h-[28rem] md:h-[32rem] lg:h-[36rem]">
         <Image
           src={imageUrl}
           alt={`Boss: ${name}`}
@@ -28,7 +28,7 @@ export function BossInfo({ name, subtitle, currentHp, maxHp, imageUrl }: BossInf
           <p className="text-xl text-gray-300 mt-2">{subtitle}</p>
         </div>
       </div>
-      <div className="card-content bg-black bg-opacity-50 backdrop-blur-sm">
+      <div className="card-content bg-black bg-opacity-50 backdrop-blur-sm p-4">
         <div className="mb-2 flex justify-between items-center">
           <span className="text-lg font-semibold text-red-400">HP</span>
           <span className="text-lg font-bold text-red-300">{currentHp} / {maxHp}</span>

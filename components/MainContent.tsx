@@ -39,7 +39,7 @@ export function MainContent({ userData, userTeams, teamTasks, bossData, onTaskCo
 	}));
 
 	return (
-		<div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+		<div className="mx-auto py-8 px-4 sm:px-6 lg:px-8">
 			<BossInfo
 				name={bossData.name}
 				subtitle={bossData.subtitle}

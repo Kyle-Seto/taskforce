@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { Task, User, Boss, Team } from '@/lib/types';
 import { getBossDamage, calculateTaskXpReward, calculateLevelUp } from '@/lib/gameLogic';
+import { toast } from "@/hooks/use-toast";
 
 export async function completeTask(task: Task, user: User, boss: Boss, team: Team) {
 
@@ -56,6 +57,20 @@ export async function completeTask(task: Task, user: User, boss: Boss, team: Tea
       .select();
 
     if (updateBossError) throw updateBossError;
+  }
+
+  // Show toast notification for damage dealt and XP gained
+  toast({
+    title: "Task Completed!",
+    description: `You dealt ${damageDealt} damage and gained ${xpReward} XP.`,
+  });
+
+  // If the user leveled up, show another toast
+  if (newLevel > user.level) {
+    toast({
+      title: "Level Up!",
+      description: `Congratulations! You've reached level ${newLevel}!`,
+    });
   }
 
   return;
