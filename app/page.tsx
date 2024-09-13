@@ -1,20 +1,18 @@
 "use client";
 
-import { TeamInfo } from "@/components/TeamInfo";
-import { BossInfo } from "@/components/BossInfo";
-import { DailyTasks } from "@/components/DailyTasks";
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState, useCallback } from 'react'
 import { checkAndInsertUser, getUserData, getUserTeams, getTeamTasks, getBossData } from '../lib/user'
-import { getXpToNextLevel } from '../lib/gameLogic';
 import { createChannel } from '@/lib/supabase';
 import { User, Team, Boss, Task } from '@/lib/types';
-import { completeTask } from '@/lib/taskActions'; // Import the completeTask function
+import { completeTask } from '@/lib/taskActions';
+import { MainContent } from '@/components/MainContent';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function Home() {
 	const { user } = useUser()
 	const [userData, setUserData] = useState<User | null>(null)
-	const [userTeams, setUserTeams] = useState<{ teams: Team }[] | null>(null)
+	const [userTeams, setUserTeams] = useState<Team[] | null>(null)
 	const [teamTasks, setTeamTasks] = useState<Task[] | null>(null)
 	const [bossData, setBossData] = useState<Boss | null>(null)
 
@@ -79,77 +77,26 @@ export default function Home() {
 		if (!task) return;
 
 		try {
-			console.log('task', task);
-			console.log('userData', userData);
-			console.log('bossData', bossData);
-			console.log('userTeams', userTeams);
 			await completeTask(task, userData, bossData, userTeams[0]);
 			console.log(`Task ${taskId} completed successfully.`);
 			initializeUser();
 		} catch (error) {
-			console.error('Error completing task poopoo:', error);
+			console.error('Error completing task:', error);
 		}
 	};
 
 	if (!user || !userData || !userTeams || !teamTasks || !bossData) {
-		return (
-			<div className="flex items-center justify-center h-screen w-full bg-background">
-				<div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
-			</div>
-		);
+		return <LoadingSpinner />;
 	}
 
-	// Assuming the first team is the current team
-	const currentTeam = userTeams[0];
-
-	// Transform teamTasks into the format expected by TeamInfo component
-	const teamMembers = currentTeam.team_members.map(member => ({
-		id: member.users.id,
-		name: member.users.firstname,
-		level: member.users.level,
-		xp: member.users.xp,
-		totalDamageDealt: member.users.total_damage_dealt,
-		xpToNextLevel: getXpToNextLevel(member.users.level),
-		tasks: teamTasks.filter(task => task.assigned_to === member.users.id).map(task => ({
-			id: task.id,
-			description: task.description,
-			is_completed: task.is_completed
-		}))
-	}));
-
-	// Transform teamTasks into the format expected by DailyTasks component
-	const formattedTasks = teamMembers.map(member => ({
-		memberId: member.id,
-		memberName: member.name,
-		tasks: member.tasks
-	}));
-
 	return (
-		<div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-			{bossData && (
-				<BossInfo
-					name={bossData.name}
-					subtitle={bossData.subtitle}
-					currentHp={bossData.current_hp}
-					maxHp={bossData.max_hp}
-					imageUrl={bossData.image_url}
-				/>
-			)}
-			<div className="mt-8 grid gap-8 grid-cols-1 lg:grid-cols-3">
-				<div className="lg:col-span-1">
-					<TeamInfo 
-						teamName={currentTeam.name} 
-						members={teamMembers}
-					/>
-				</div>
-				<div className="lg:col-span-2">
-					<DailyTasks
-						currentUserId={user.id}
-						teamTasks={formattedTasks}
-						onTaskComplete={handleTaskComplete}
-					/>
-				</div>
-			</div>
-		</div>
+		<MainContent
+			user={user}
+			userData={userData}
+			userTeams={userTeams}
+			teamTasks={teamTasks}
+			bossData={bossData}
+			onTaskComplete={handleTaskComplete}
+		/>
 	);
 }

@@ -28,9 +28,18 @@ export interface Task {
   }
   
   export interface Team {
-    id: string;
+    id: string; // Add this line
     name: string;
-    team_members: TeamMember[];
+    team_members: {
+        user_id: string;
+        users: {
+            id: string;
+            firstname: string;
+            level: number;
+            xp: number;
+            total_damage_dealt: number;
+        }[];
+    };
   }
   
   export interface TeamMember {

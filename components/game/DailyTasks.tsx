@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "./ui/dialog";
-import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Task, MemberTasks, DailyTasksProps } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import { TaskList } from './TaskList';
 import { TaskProgress } from './TaskProgress';
 
 export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTasksProps) {
+	console.log("teamTasks", teamTasks)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user } = useUser();
@@ -25,21 +26,6 @@ export function DailyTasks({ currentUserId, teamTasks, onTaskComplete }: DailyTa
     }
 
     try {
-      // const { data, error } = await supabase
-      //   .from('tasks')
-      //   .upsert({ 
-      //     id: selectedTask.id, 
-      //     assigned_to: user.id, 
-      //     is_completed: true, 
-      //     description: selectedTask.description,
-      //     date: new Date().toISOString().split('T')[0]
-      //   })
-      //   .select()
-      //   .single();
-
-      // if (error) throw error;
-
-      // console.log('Task updated:', data);
       onTaskComplete(selectedTask.id);
       setIsModalOpen(false);
       setSelectedTask(null);
