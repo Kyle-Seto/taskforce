@@ -2,7 +2,7 @@
 
 Slay dragons of procrastination, level up your productivity, and conquer quests with your team in TaskForce MMO – the revolutionary task management app that turns your daily grind into an epic multiplayer adventure. 
 
-![TaskForce MMO Dashboard](/public/images/screenshot.jpg)
+![TaskForce MMO Dashboard](/public/images/Screenshot.png)
 
 Forge alliances, battle bosses, and watch your tasks crumble before your might in this cutting-edge web application that blends the thrill of RPGs with the power of modern productivity tools.
 
